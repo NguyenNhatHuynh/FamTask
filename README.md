@@ -41,26 +41,6 @@ Family Task Manager là ứng dụng mobile đa nền tảng (iOS & Android) gi�
 
 ---
 
-## 🧭 Cấu trúc thư mục (Clean Architecture)
-
-
-my_family_tasks/
-├── android/ ios/ web/ # Nền tảng
-├── lib/
-│ ├── core/ # Nền tảng: constants, theme, services, utils
-│ ├── shared/ # Tài nguyên dùng chung: base models, widgets
-│ ├── features/ # Theo business domain: authentication, household, tasks...
-│ ├── routes/ # Điều hướng & route guards
-│ ├── config/ # Environment, flavor, firebase config
-│ └── l10n/ # Đa ngôn ngữ
-├── test/ # Unit, widget, integration tests
-├── assets/ # Hình ảnh, font, animation
-├── pubspec.yaml # Dependencies
-└── README.md
-
-
-
-
 ### ✅ Ưu điểm
 
 - **Scalable:** dễ thêm features mới.
