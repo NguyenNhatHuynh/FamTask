@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "229019082339",
+    "project_id": "famtask-2d42e",
+    "storage_bucket": "famtask-2d42e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:229019082339:android:a9d156067dda6c81046256",
+        "android_client_info": {
+          "package_name": "com.example.famtask"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiTx1Uh8kX2bSSI958f-KZ0bErNwkSRqE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

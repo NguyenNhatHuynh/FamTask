@@ -32,7 +32,8 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
-
+note/note.md
+note.md
 # Symbolication related
 app.*.symbols
 
