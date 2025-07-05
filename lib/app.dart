@@ -14,6 +14,7 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'Family Task Manager',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: AppColors.primary,
         scaffoldBackgroundColor: AppColors.background,
@@ -21,8 +22,10 @@ class MyApp extends ConsumerWidget {
           primary: AppColors.primary,
           secondary: AppColors.secondary,
         ),
+        
       ),
       routerConfig: router,
     );
+  
   }
 }
