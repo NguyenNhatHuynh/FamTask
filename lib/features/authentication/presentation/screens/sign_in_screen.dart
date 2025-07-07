@@ -16,7 +16,7 @@ class SignInScreen extends ConsumerWidget {
 
     if (authState.user != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.go(RouteNames.householdSetup);
+        context.go(RouteNames.dashboard);
       });
     }
 
@@ -134,7 +134,7 @@ class SignInScreen extends ConsumerWidget {
 
                     final updatedAuthState = ref.read(authProvider);
                     if (updatedAuthState.user != null) {
-                      context.go(RouteNames.householdSetup);
+                      context.go(RouteNames.dashboard);
                     } else if (updatedAuthState.errorMessage != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(updatedAuthState.errorMessage!)),

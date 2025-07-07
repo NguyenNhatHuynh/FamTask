@@ -19,7 +19,7 @@ class SignUpScreen extends ConsumerWidget {
     // Kiểm tra nếu đã đăng nhập thành công thì chuyển trang
     if (authState.user != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.go(RouteNames.householdSetup);
+        context.go(RouteNames.dashboard);
       });
     }
 

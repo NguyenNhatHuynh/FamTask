@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:famtask/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:famtask/features/authentication/presentation/screens/sign_in_screen.dart';
 import 'package:famtask/features/authentication/presentation/screens/sign_up_screen.dart';
-import 'package:famtask/features/household/presentation/screens/household_setup_screen.dart';
+import 'package:famtask/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:famtask/routes/route_names.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -19,14 +19,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SignUpScreen(),
       ),
       GoRoute(
-        path: RouteNames.householdSetup,
-        builder: (context, state) => const HouseholdSetupScreen(),
+        path: RouteNames.dashboard,
+        builder: (context, state) => const DashboardScreen(),
       ),
     ],
     redirect: (context, state) async {
       final authState = ref.read(authProvider);
       final isAuthenticated = authState.user != null;
-
+      
       if (!isAuthenticated && state.uri.toString() != RouteNames.signIn && state.uri.toString() != RouteNames.signUp) {
         return RouteNames.signIn;
       }
