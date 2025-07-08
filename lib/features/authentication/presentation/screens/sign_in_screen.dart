@@ -2,17 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:famtask/features/authentication/presentation/providers/auth_providers.dart';
-import 'package:famtask/shared/presentation/widgets/indicators/progress_indicator.dart';
 import 'package:famtask/routes/route_names.dart';
 
-class SignInScreen extends ConsumerWidget {
+class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SignInScreen> createState() => _SignInScreenState();
+}
+
+class _SignInScreenState extends ConsumerState<SignInScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool obscurePassword = true;
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
 
     if (authState.user != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -37,7 +43,6 @@ class SignInScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              // Title
               const Text(
                 'Hey! Welcome back',
                 style: TextStyle(
@@ -55,8 +60,8 @@ class SignInScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 40),
-              
-              // Email Field
+
+              // Email
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
@@ -65,17 +70,17 @@ class SignInScreen extends ConsumerWidget {
                 child: TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'Email',
-                    prefixIcon: const Icon(Icons.email_outlined, color: Colors.grey),
+                    prefixIcon: Icon(Icons.email_outlined, color: Colors.grey),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              
-              // Password Field
+
+              // Password
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
@@ -83,37 +88,41 @@ class SignInScreen extends ConsumerWidget {
                 ),
                 child: TextField(
                   controller: passwordController,
-                  obscureText: true,
+                  obscureText: obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
-                    suffixIcon: const Icon(Icons.visibility_off_outlined, color: Colors.grey),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscurePassword = !obscurePassword;
+                        });
+                      },
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
-              
-              // Forgot Password
+
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {
-                    // TODO: Implement forgot password
-                  },
+                  onPressed: () {},
                   child: const Text(
                     'Forgot Password?',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.blue, fontSize: 14),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-              
-              // Sign In Button
+
+              // Sign In button
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -131,7 +140,6 @@ class SignInScreen extends ConsumerWidget {
                       emailController.text.trim(),
                       passwordController.text.trim(),
                     );
-
                     final updatedAuthState = ref.read(authProvider);
                     if (updatedAuthState.user != null) {
                       context.go(RouteNames.dashboard);
@@ -142,153 +150,71 @@ class SignInScreen extends ConsumerWidget {
                     }
                   },
                   child: authState.isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
+                      ? const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         )
-                      : const Text(
-                          'Sign In',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Divider
               Row(
                 children: [
                   Expanded(child: Divider(color: Colors.grey[300])),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'Or login with',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Text('Or login with', style: TextStyle(color: Colors.grey)),
                   ),
                   Expanded(child: Divider(color: Colors.grey[300])),
                 ],
               ),
               const SizedBox(height: 24),
-              
-              // Apple Sign In
-              Container(
-                width: double.infinity,
-                height: 56,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TextButton(
-                  onPressed: () {
-                    // TODO: Implement Apple sign in
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.apple, color: Colors.black, size: 24),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Log in with Apple',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+
+              // Apple Login
+              socialLoginButton('assets/images/apple_logo.png', 'Log in with Apple', () {}),
               const SizedBox(height: 16),
-              
-              // Google Sign In
-              Container(
-                width: double.infinity,
-                height: 56,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TextButton(
-                  onPressed: () {
-                    // TODO: Implement Google sign in
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Google icon placeholder
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'G',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Log in with Google',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+
+              // Google Login
+              socialLoginButton('assets/images/google_logo.png', 'Log in with Google', () {}),
+
               const SizedBox(height: 32),
-              
-              // Sign Up Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    "Don't have an account? ",
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                    ),
-                  ),
+                  const Text("Don't have an account? ", style: TextStyle(color: Colors.grey)),
                   TextButton(
-                    onPressed: () {
-                      context.go(RouteNames.signUp);
-                    },
-                    child: const Text(
-                      'Sign Up',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    onPressed: () => context.go(RouteNames.signUp),
+                    child: const Text('Sign Up', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget socialLoginButton(String assetPath, String text, VoidCallback onTap) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextButton(
+        onPressed: onTap,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(assetPath, width: 24, height: 24),
+            const SizedBox(width: 12),
+            Text(text, style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w500)),
+          ],
         ),
       ),
     );
