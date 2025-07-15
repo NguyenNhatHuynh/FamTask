@@ -22,10 +22,8 @@ class MyApp extends ConsumerWidget {
           primary: AppColors.primary,
           secondary: AppColors.secondary,
         ),
-        
       ),
       routerConfig: router,
     );
-  
   }
 }

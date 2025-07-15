@@ -1,3 +1,8 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'family_model.freezed.dart';
+part 'family_model.g.dart';
+
 @freezed
 class Family with _$Family {
   const factory Family({
@@ -6,7 +11,7 @@ class Family with _$Family {
     required String ownerId,
     required DateTime createdAt,
     required List<String> memberIds,
-    String? inviteCode,
+    required String inviteCode,
     String? description,
     Map<String, dynamic>? settings,
   }) = _Family;

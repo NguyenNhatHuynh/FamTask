@@ -4,26 +4,39 @@ part 'task_model.freezed.dart';
 part 'task_model.g.dart';
 
 enum TaskStatus {
+  @JsonValue('pending')
   pending,
+  @JsonValue('in_progress')
   inProgress,
+  @JsonValue('completed')
   completed,
+  @JsonValue('overdue')
   overdue,
 }
 
 enum TaskType {
+  @JsonValue('daily')
+  daily,
+  @JsonValue('weekly')
+  weekly,
+  @JsonValue('one_time')
   oneTime,
-  recurring,
 }
 
 enum RecurrenceType {
+  @JsonValue('daily')
   daily,
+  @JsonValue('weekly')
   weekly,
+  @JsonValue('monthly')
   monthly,
+  @JsonValue('custom')
   custom,
 }
 
 @freezed
 class Task with _$Task {
+  @JsonSerializable(explicitToJson: true)
   const factory Task({
     required String id,
     required String title,
@@ -37,7 +50,7 @@ class Task with _$Task {
     String? categoryId,
     String? familyId,
     RecurrenceType? recurrenceType,
-    int? recurrenceInterval, // số ngày/tuần/tháng
+    int? recurrenceInterval,
     List<String>? tags,
     String? photoUrl,
     String? notes,

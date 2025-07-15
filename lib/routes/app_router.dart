@@ -4,7 +4,9 @@ import 'package:famtask/features/authentication/presentation/providers/auth_prov
 import 'package:famtask/features/authentication/presentation/screens/sign_in_screen.dart';
 import 'package:famtask/features/authentication/presentation/screens/sign_up_screen.dart';
 import 'package:famtask/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:famtask/features/tasks/presentation/screens/add_task_screen.dart';
 import 'package:famtask/routes/route_names.dart';
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -21,6 +23,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.dashboard,
         builder: (context, state) => const DashboardScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.addTask,
+        builder: (context, state) => const AddTaskScreen(),
       ),
     ],
     redirect: (context, state) async {

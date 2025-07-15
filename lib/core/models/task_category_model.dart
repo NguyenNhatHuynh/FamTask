@@ -1,3 +1,8 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'task_category_model.freezed.dart';
+part 'task_category_model.g.dart';
+
 @freezed
 class TaskCategory with _$TaskCategory {
   const factory TaskCategory({
@@ -8,5 +13,6 @@ class TaskCategory with _$TaskCategory {
     String? description,
   }) = _TaskCategory;
 
-  factory TaskCategory.fromJson(Map<String, dynamic> json) => _$TaskCategoryFromJson(json);
+  factory TaskCategory.fromJson(Map<String, dynamic> json) =>
+      _$TaskCategoryFromJson(json);
 }

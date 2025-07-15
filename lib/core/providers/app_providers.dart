@@ -1,222 +1,232 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/task_model.dart';
-import '../models/user_model.dart';
-import '../models/family_model.dart';
-import '../services/database_service.dart';
+import 'package:famtask/core/models/task_model.dart';
+import 'package:famtask/core/models/user_model.dart';
+import 'package:famtask/core/models/family_model.dart' as fam;
+import 'package:famtask/core/models/task_category_model.dart';
+import 'package:famtask/core/models/achievement_model.dart';
+import 'package:famtask/core/services/database_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
-// Database service provider
-final databaseServiceProvider = Provider<DatabaseService>((ref) {
-  return DatabaseService();
+// Provider for DatabaseService
+final databaseServiceProvider = Provider<DatabaseService>((ref) => DatabaseService());
+
+// Auth provider
+final authProvider = StateNotifierProvider<AuthNotifier, User?>((ref) {
+  return AuthNotifier(ref);
 });
 
-// Current user provider
-final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, User?>((ref) {
-  return CurrentUserNotifier(ref.read(databaseServiceProvider));
-});
+class AuthNotifier extends StateNotifier<User?> {
+  final Ref ref;
+  final firebase_auth.FirebaseAuth _firebaseAuth = firebase_auth.FirebaseAuth.instance;
 
-class CurrentUserNotifier extends StateNotifier<User?> {
-  final DatabaseService _databaseService;
-
-  CurrentUserNotifier(this._databaseService) : super(null);
-
-  Future<void> loadCurrentUser() async {
-    try {
-      final user = await _databaseService.getCurrentUser();
-      state = user;
-    } catch (e) {
-      // Handle error
-      state = null;
-    }
+  AuthNotifier(this.ref) : super(null) {
+    _firebaseAuth.authStateChanges().listen((firebaseUser) async {
+      if (firebaseUser != null) {
+        final dbService = ref.read(databaseServiceProvider);
+        final users = await dbService.database.then(
+          (db) => db.query('users', where: 'email = ?', whereArgs: [firebaseUser.email]),
+        );
+        if (users.isNotEmpty) {
+          state = User.fromJson({
+            ...users.first,
+            'achievements': (users.first['achievements'] as String?)?.split(',') ?? [],
+            'joined_at': DateTime.parse(users.first['joined_at'] as String),
+            'last_active_at': users.first['last_active_at'] != null
+                ? DateTime.parse(users.first['last_active_at'] as String)
+                : null,
+            'is_active': (users.first['is_active'] as int?) == 1,
+          });
+        }
+      } else {
+        state = null;
+      }
+    });
   }
 
-  Future<void> updateUser(User user) async {
+  Future<void> signIn(String email, String password) async {
     try {
-      await _databaseService.updateUser(user);
-      state = user;
-    } catch (e) {
-      // Handle error
-    }
-  }
-
-  Future<void> addPoints(int points) async {
-    if (state != null) {
-      final updatedUser = state!.copyWith(
-        totalPoints: state!.totalPoints + points,
-        level: _calculateLevel(state!.totalPoints + points),
+      await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
-      await updateUser(updatedUser);
+    } catch (e) {
+      rethrow;
     }
   }
 
-  int _calculateLevel(int totalPoints) {
-    // Simple level calculation: 100 points per level
-    return (totalPoints / 100).floor() + 1;
+  Future<void> signUp(String name, String email, String password) async {
+    try {
+      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final firebaseUser = userCredential.user;
+      if (firebaseUser != null) {
+        final dbService = ref.read(databaseServiceProvider);
+        final user = User(
+          id: firebaseUser.uid,
+          name: name,
+          email: email,
+          totalPoints: 0,
+          level: 1,
+          joinedAt: DateTime.now(),
+          isActive: true,
+        );
+        await dbService.insertUser(user);
+        state = user;
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
+
+  Future<void> signOut() async {
+    await _firebaseAuth.signOut();
+    state = null;
+  }
+
+  Future<void> updatePoints(int points) async {
+    if (state == null) return;
+    final dbService = ref.read(databaseServiceProvider);
+    final updatedUser = state!.copyWith(
+      totalPoints: state!.totalPoints + points,
+      level: _calculateLevel(state!.totalPoints + points),
+    );
+    await dbService.updateUser(updatedUser);
+    state = updatedUser;
+  }
+
+  int _calculateLevel(int totalPoints) => (totalPoints ~/ 100) + 1;
 }
 
-// Current family provider
-final currentFamilyProvider = StateNotifierProvider<CurrentFamilyNotifier, Family?>((ref) {
-  return CurrentFamilyNotifier(ref.read(databaseServiceProvider));
+// Current Family provider
+final currentFamilyProvider = StateNotifierProvider<CurrentFamilyNotifier, fam.Family?>((ref) {
+  return CurrentFamilyNotifier(ref);
 });
 
-class CurrentFamilyNotifier extends StateNotifier<Family?> {
-  final DatabaseService _databaseService;
+class CurrentFamilyNotifier extends StateNotifier<fam.Family?> {
+  final Ref ref;
 
-  CurrentFamilyNotifier(this._databaseService) : super(null);
+  CurrentFamilyNotifier(this.ref) : super(null) {
+    _loadFamily();
+  }
 
-  Future<void> loadCurrentFamily() async {
-    try {
-      final family = await _databaseService.getCurrentFamily();
+  Future<void> _loadFamily() async {
+    final user = ref.read(authProvider);
+    if (user != null) {
+      final family = await ref.read(databaseServiceProvider).getFamilyForUser(user);
       state = family;
-    } catch (e) {
-      state = null;
     }
   }
 
-  Future<void> createFamily(String name, String description) async {
-    try {
-      final family = await _databaseService.createFamily(name, description);
-      state = family;
-    } catch (e) {
-      // Handle error
-    }
+  Future<void> createFamily(String name, String? description) async {
+    final user = ref.read(authProvider);
+    if (user == null) return;
+    final family = await ref.read(databaseServiceProvider).createFamily(user, name, description);
+    state = family;
   }
 
   Future<void> joinFamily(String inviteCode) async {
-    try {
-      final family = await _databaseService.joinFamily(inviteCode);
-      state = family;
-    } catch (e) {
-      // Handle error
-    }
+    final user = ref.read(authProvider);
+    if (user == null) return;
+    final family = await ref.read(databaseServiceProvider).joinFamily(inviteCode, user);
+    state = family;
   }
 }
 
-// Tasks provider
+final familyMembersProvider = FutureProvider<List<User>>((ref) async {
+  final currentFamily = ref.watch(currentFamilyProvider);
+  if (currentFamily == null) return [];
+  return await ref.read(databaseServiceProvider).getFamilyMembers(currentFamily.id);
+});
+
+final taskCategoriesProvider = FutureProvider<List<TaskCategory>>((ref) async {
+  return await ref.read(databaseServiceProvider).getTaskCategories();
+});
+
+final userAchievementsProvider = FutureProvider<List<Achievement>>((ref) async {
+  final currentUser = ref.watch(authProvider);
+  if (currentUser == null) return [];
+  return await ref.read(databaseServiceProvider).getUserAchievements(currentUser.id);
+});
+
 final tasksProvider = StateNotifierProvider<TasksNotifier, List<Task>>((ref) {
-  return TasksNotifier(ref.read(databaseServiceProvider));
+  return TasksNotifier(ref);
 });
 
 class TasksNotifier extends StateNotifier<List<Task>> {
+  final Ref ref;
   final DatabaseService _databaseService;
 
-  TasksNotifier(this._databaseService) : super([]);
+  TasksNotifier(this.ref)
+      : _databaseService = ref.read(databaseServiceProvider),
+        super([]) {
+    _loadTasks();
+  }
 
-  Future<void> loadTasks() async {
-    try {
-      final tasks = await _databaseService.getAllTasks();
-      state = tasks;
-    } catch (e) {
-      // Handle error
-      state = [];
-    }
+  Future<void> _loadTasks() async {
+    final tasks = await _databaseService.getAllTasks();
+    state = tasks;
   }
 
   Future<void> addTask(Task task) async {
-    try {
-      await _databaseService.insertTask(task);
-      state = [...state, task];
-    } catch (e) {
-      // Handle error
-    }
+    await _databaseService.insertTask(task);
+    state = [...state, task];
   }
 
   Future<void> updateTask(Task task) async {
-    try {
-      await _databaseService.updateTask(task);
-      state = state.map((t) => t.id == task.id ? task : t).toList();
-    } catch (e) {
-      // Handle error
-    }
+    await _databaseService.updateTask(task);
+    state = state.map((t) => t.id == task.id ? task : t).toList();
   }
 
   Future<void> deleteTask(String taskId) async {
-    try {
-      await _databaseService.deleteTask(taskId);
-      state = state.where((t) => t.id != taskId).toList();
-    } catch (e) {
-      // Handle error
-    }
+    await _databaseService.deleteTask(taskId);
+    state = state.where((t) => t.id != taskId).toList();
   }
 
   Future<void> completeTask(String taskId) async {
     final task = state.firstWhere((t) => t.id == taskId);
-    final completedTask = task.copyWith(
-      status: TaskStatus.completed,
-      completedAt: DateTime.now(),
-    );
-    await updateTask(completedTask);
+    final user = ref.read(authProvider);
+    if (user == null) return;
+    await _databaseService.completeTask(task, user);
+    await _loadTasks();
+    await ref.read(authProvider.notifier).updatePoints(task.points);
   }
 
-  // Filter methods
   List<Task> get pendingTasks => state.where((t) => t.status == TaskStatus.pending).toList();
   List<Task> get inProgressTasks => state.where((t) => t.status == TaskStatus.inProgress).toList();
   List<Task> get completedTasks => state.where((t) => t.status == TaskStatus.completed).toList();
   List<Task> get overdueTasks => state.where((t) => t.status == TaskStatus.overdue).toList();
-  
+
   List<Task> getTasksByUser(String userId) => state.where((t) => t.assignedUserId == userId).toList();
   List<Task> getTasksByCategory(String categoryId) => state.where((t) => t.categoryId == categoryId).toList();
+
   List<Task> getTodayTasks() {
     final today = DateTime.now();
-    return state.where((t) => 
-      t.deadline.year == today.year &&
-      t.deadline.month == today.month &&
-      t.deadline.day == today.day
-    ).toList();
+    return state.where((t) =>
+        t.deadline.year == today.year &&
+        t.deadline.month == today.month &&
+        t.deadline.day == today.day).toList();
+  }
+
+  double getTodayProgress() {
+    final todayTasks = getTodayTasks();
+    if (todayTasks.isEmpty) return 0.0;
+    final todayCompletedTasks = todayTasks.where((t) => t.status == TaskStatus.completed).toList();
+    return todayCompletedTasks.length / todayTasks.length;
+  }
+
+  Map<String, dynamic> getUserStats() {
+    final currentUser = ref.read(authProvider);
+    if (currentUser == null) return {};
+    final userTasks = getTasksByUser(currentUser.id);
+    final completedTasks = userTasks.where((t) => t.status == TaskStatus.completed).toList();
+    return {
+      'totalTasks': userTasks.length,
+      'completedTasks': completedTasks.length,
+      'totalPoints': currentUser.totalPoints,
+      'level': currentUser.level,
+    };
   }
 }
-
-// Family members provider
-final familyMembersProvider = FutureProvider<List<User>>((ref) async {
-  final databaseService = ref.read(databaseServiceProvider);
-  final currentFamily = ref.watch(currentFamilyProvider);
-  
-  if (currentFamily == null) return [];
-  
-  return await databaseService.getFamilyMembers(currentFamily.id);
-});
-
-// Task categories provider
-final taskCategoriesProvider = FutureProvider<List<TaskCategory>>((ref) async {
-  final databaseService = ref.read(databaseServiceProvider);
-  return await databaseService.getTaskCategories();
-});
-
-// User achievements provider
-final userAchievementsProvider = FutureProvider<List<Achievement>>((ref) async {
-  final databaseService = ref.read(databaseServiceProvider);
-  final currentUser = ref.watch(currentUserProvider);
-  
-  if (currentUser == null) return [];
-  
-  return await databaseService.getUserAchievements(currentUser.id);
-});
-
-// Dashboard stats provider
-final dashboardStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final tasks = ref.watch(tasksProvider);
-  final currentUser = ref.watch(currentUserProvider);
-  
-  if (currentUser == null) return {};
-  
-  final userTasks = tasks.where((t) => t.assignedUserId == currentUser.id).toList();
-  final completedTasks = userTasks.where((t) => t.status == TaskStatus.completed).toList();
-  final todayTasks = userTasks.where((t) {
-    final today = DateTime.now();
-    return t.deadline.year == today.year &&
-           t.deadline.month == today.month &&
-           t.deadline.day == today.day;
-  }).toList();
-  
-  final todayCompletedTasks = todayTasks.where((t) => t.status == TaskStatus.completed).toList();
-  final todayProgress = todayTasks.isEmpty ? 0.0 : todayCompletedTasks.length / todayTasks.length;
-  
-  return {
-    'totalTasks': userTasks.length,
-    'completedTasks': completedTasks.length,
-    'todayTasks': todayTasks.length,
-    'todayProgress': todayProgress,
-    'totalPoints': currentUser.totalPoints,
-    'level': currentUser.level,
-  };
-});
