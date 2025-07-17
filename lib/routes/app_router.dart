@@ -7,7 +7,6 @@ import 'package:famtask/features/dashboard/presentation/screens/dashboard_screen
 import 'package:famtask/features/tasks/presentation/screens/add_task_screen.dart';
 import 'package:famtask/routes/route_names.dart';
 
-
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: RouteNames.signIn,
@@ -22,7 +21,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.dashboard,
-        builder: (context, state) => const DashboardScreen(),
+        builder: (context, state) => DashboardScreen(location: state.uri.toString()),
       ),
       GoRoute(
         path: RouteNames.addTask,
@@ -32,7 +31,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) async {
       final authState = ref.read(authProvider);
       final isAuthenticated = authState.user != null;
-      
+
       if (!isAuthenticated && state.uri.toString() != RouteNames.signIn && state.uri.toString() != RouteNames.signUp) {
         return RouteNames.signIn;
       }

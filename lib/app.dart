@@ -17,7 +17,7 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.background,
+        scaffoldBackgroundColor: const Color(0xFFF5F5F7),
         colorScheme: ColorScheme.fromSwatch().copyWith(
           primary: AppColors.primary,
           secondary: AppColors.secondary,

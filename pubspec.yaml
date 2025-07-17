@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.5.0 <4.0.0' # Broaden SDK range for compatibility
+  sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -14,7 +14,7 @@ dependencies:
   firebase_auth: ^5.3.1
   google_sign_in: ^6.2.1
   flutter_riverpod: ^2.5.1
-  go_router: ^14.2.8
+  go_router: 14.8.1  # Explicitly pinned to match error log version
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
   equatable: ^2.0.5
@@ -38,7 +38,7 @@ dev_dependencies:
   leak_tracker_testing: ^3.0.1
   test_api: ^0.7.3
   vector_math: ^2.1.4
-  vm_service: ^15.0.0 # Updated to resolve conflict
+  vm_service: ^15.0.0
 
 flutter:
   uses-material-design: true

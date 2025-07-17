@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:famtask/core/models/task_model.dart';
+import 'package:famtask/core/providers/app_providers.dart';
 import 'package:famtask/routes/route_names.dart';
 
 class DashboardScreen extends ConsumerWidget {
-  const DashboardScreen({super.key});
+  final String location;
+  const DashboardScreen({super.key, required this.location});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tasks = ref.watch(tasksProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       body: SafeArea(
@@ -19,18 +24,16 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               _buildHeader(),
               const SizedBox(height: 30),
-              _buildTodayProgressCard(),
+              _buildTodayProgressCard(context, ref),
               const SizedBox(height: 30),
-              _buildInProgressSection(),
+              _buildQuickStats(ref),
               const SizedBox(height: 30),
-              _buildTaskGroupsSection(),
-              const SizedBox(height: 30),
-              _buildBottomNavigation(context),
-              const SizedBox(height: 20),
+              const SizedBox(height: 20), // Placeholder for future content
             ],
           ),
         ),
       ),
+      bottomNavigationBar: _buildBottomNavigation(context, location),
     );
   }
 
@@ -72,7 +75,8 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTodayProgressCard() {
+  Widget _buildTodayProgressCard(BuildContext context, WidgetRef ref) {
+    final progress = ref.watch(tasksProvider.notifier).getTodayProgress();
     return Container(
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
@@ -92,10 +96,13 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 const Text('Sắp hoàn thành rồi!', style: TextStyle(color: Colors.white70, fontSize: 14)),
                 const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-                  child: const Text('Xem chi tiết', style: TextStyle(color: Color(0xFF6B46C1), fontSize: 14, fontWeight: FontWeight.w600)),
+                GestureDetector(
+                  onTap: () => context.push(RouteNames.addTask),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                    child: const Text('Thêm công việc', style: TextStyle(color: Color(0xFF6B46C1), fontSize: 14, fontWeight: FontWeight.w600)),
+                  ),
                 ),
               ],
             ),
@@ -107,13 +114,13 @@ class DashboardScreen extends ConsumerWidget {
                 width: 80,
                 height: 80,
                 child: CircularProgressIndicator(
-                  value: 0.85,
+                  value: progress,
                   strokeWidth: 6,
                   backgroundColor: Colors.white30,
                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               ),
-              const Text('85%', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('${(progress * 100).toStringAsFixed(0)}%', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
             ],
           ),
         ],
@@ -121,105 +128,10 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInProgressSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Text('Đang thực hiện', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
-            const SizedBox(width: 8),
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
-              child: const Center(
-                child: Text('6', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 15),
-        Row(
-          children: [
-            Expanded(child: _buildTaskCard('Công việc nhà', 'Dọn dẹp phòng khách', const Color(0xFFE8F3FF), const Color(0xFF4A90E2), Icons.cleaning_services_outlined)),
-            const SizedBox(width: 15),
-            Expanded(child: _buildTaskCard('Việc cá nhân', 'Tưới cây trong vườn', const Color(0xFFFFE8E0), const Color(0xFFFF6B35), Icons.local_florist_outlined)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTaskCard(String category, String title, Color bgColor, Color accentColor, IconData icon) {
+  Widget _buildQuickStats(WidgetRef ref) {
+    final userStats = ref.watch(tasksProvider.notifier).getUserStats();
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: accentColor.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, color: accentColor, size: 20),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(category, style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black)),
-          const SizedBox(height: 12),
-          Container(
-            height: 4,
-            decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
-            child: FractionallySizedBox(
-              widthFactor: 0.6,
-              child: Container(
-                decoration: BoxDecoration(color: accentColor, borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTaskGroupsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Text('Nhóm công việc', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
-            const SizedBox(width: 8),
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
-              child: const Center(
-                child: Text('4', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 15),
-        _buildTaskGroupItem('Việc nhà', '25 Công việc', const Color(0xFFE8F3FF), const Color(0xFF4A90E2), Icons.home_outlined, '70%'),
-        const SizedBox(height: 12),
-        _buildTaskGroupItem('Việc cá nhân', '30 Công việc', const Color(0xFFE8F0FF), const Color(0xFF6B46C1), Icons.person_outline, '52%'),
-        const SizedBox(height: 12),
-        _buildTaskGroupItem('Việc định kỳ', '20 Công việc', const Color(0xFFFFE8E0), const Color(0xFFFF6B35), Icons.schedule_outlined, '87%'),
-      ],
-    );
-  }
-
-  Widget _buildTaskGroupItem(String title, String subtitle, Color bgColor, Color accentColor, IconData icon, String progress) {
-    return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -227,38 +139,24 @@ class DashboardScreen extends ConsumerWidget {
           BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: accentColor, size: 24),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black)),
-                const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-              ],
-            ),
-          ),
-          Stack(
-            alignment: Alignment.center,
+          const Text('Thống kê nhanh', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black)),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SizedBox(
-                width: 50,
-                height: 50,
-                child: CircularProgressIndicator(
-                  value: int.parse(progress.replaceAll('%', '')) / 100,
-                  strokeWidth: 4,
-                  backgroundColor: Colors.grey[200],
-                  valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-                ),
-              ),
-              Text(progress, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accentColor)),
+              Text('Tổng nhiệm vụ: ${userStats['totalTasks'] ?? 0}', style: TextStyle(color: Colors.grey[600])),
+              Text('Hoàn thành: ${userStats['completedTasks'] ?? 0}', style: TextStyle(color: Colors.grey[600])),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Điểm: ${userStats['totalPoints'] ?? 0}', style: TextStyle(color: Colors.grey[600])),
+              Text('Cấp độ: ${userStats['level'] ?? 1}', style: TextStyle(color: Colors.grey[600])),
             ],
           ),
         ],
@@ -266,28 +164,26 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBottomNavigation(BuildContext context) {
+  Widget _buildBottomNavigation(BuildContext context, String location) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, -5)),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(Icons.home, true),
-          _buildNavItem(Icons.calendar_today_outlined, false),
+          _buildNavItem(Icons.home, RouteNames.dashboard, location, context),
+          _buildNavItem(Icons.calendar_today_outlined, '/calendar', location, context),
           GestureDetector(
-            onTap: () {
-              context.push(RouteNames.addTask);
-            },
+            onTap: () => context.push(RouteNames.addTask),
             child: Container(
               width: 50,
               height: 50,
+              margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(colors: [Color(0xFF6B46C1), Color(0xFF9333EA)], begin: Alignment.topLeft, end: Alignment.bottomRight),
                 borderRadius: BorderRadius.circular(25),
@@ -298,17 +194,22 @@ class DashboardScreen extends ConsumerWidget {
               child: const Icon(Icons.add, color: Colors.white, size: 24),
             ),
           ),
-          _buildNavItem(Icons.folder_outlined, false),
-          _buildNavItem(Icons.person_outline, false),
+          _buildNavItem(Icons.list, RouteNames.taskList, location, context),
+          _buildNavItem(Icons.person_outline, '/profile', location, context),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(IconData icon, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      child: Icon(icon, color: isActive ? const Color(0xFF6B46C1) : Colors.grey, size: 24),
+  Widget _buildNavItem(IconData icon, String route, String currentLocation, BuildContext context) {
+    final isActive = currentLocation == route || (route == RouteNames.dashboard && currentLocation == '/dashboard');
+    return IconButton(
+      icon: Icon(icon, color: isActive ? const Color(0xFF6B46C1) : Colors.grey, size: 24),
+      onPressed: () {
+        if (currentLocation != route) {
+          context.go(route);
+        }
+      },
     );
   }
 }
